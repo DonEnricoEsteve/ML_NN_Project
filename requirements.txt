@@ -1,11 +1,9 @@
 pymatreader
 numpy
-os
-glob
+pandas
 mne
-traceback
-re
 scipy
 matplotlib
 seaborn
 scikit-learn
+
