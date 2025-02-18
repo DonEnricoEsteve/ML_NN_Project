@@ -1,0 +1,11 @@
+pymatreader
+numpy
+os
+glob
+mne
+traceback
+re
+scipy
+matplotlib
+seaborn
+scikit-learn
