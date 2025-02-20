@@ -41,9 +41,9 @@ np.random.seed(42)
 wd = "Z:/Don/ML_Project"
 
 # Define event-related field (ERF) components
-component_start_times = [0.118, 0.171, 0.239, 0.350]
-component_end_times = [0.155, 0.217, 0.332, 0.799]
-component_labels = ['m100', 'm200', 'm300', 'mLPP']
+component_start_times = [0, 0.118, 0.171, 0.239, 0.350]
+component_end_times = [0.799, 0.155, 0.217, 0.332, 0.799]
+component_labels = ['PS', 'm100', 'm200', 'm300', 'mLPP']
 
 components_with_colors = [
     (component_start_times[0], component_end_times[0], "(a)", "Post-Stimulus Window (0-800 ms)", "lightgray"),
@@ -71,7 +71,7 @@ base_conds = ['food_1.npy', 'food_2.npy', 'positive_1.npy', 'positive_2.npy', 'n
 
 # Define the names of the output numpy arrays derived from the base conditions
 derived_conds = ['food.npy', 'nonfood.npy', 'nonfood_1.npy', 'nonfood_2.npy', 
-                 'positive.npy', 'neutral.npy', 'pres_1.npy' 'pres_2.npy']
+                 'positive.npy', 'neutral.npy', 'pres_1.npy', 'pres_2.npy']
 
 # ============================================== #
 # Part 2: Data Preprocessing
@@ -98,15 +98,15 @@ results_dir = f"{wd}/Results"
 binary_tasks = {
     "12": ["pres_1_dec_pseudo_PCA", "pres_2_dec_pseudo_PCA"],
     "FN": ["food_dec_pseudo_PCA", "nonfood_dec_pseudo_PCA"],
-    "FP": ["food_dec_pseudo_PCA", "positive_dec_pseudo_PCA"],
-    "FT": ["food_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
-    "PT": ["positive_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
-    "FN1": ["food_1_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA"],
-    "FN2": ["food_2_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
-    "F12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA"],
-    "P12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
-    "T12": ["neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
-    "N12": ["nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"]
+    # "FP": ["food_dec_pseudo_PCA", "positive_dec_pseudo_PCA"],
+    # "FT": ["food_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
+    # "PT": ["positive_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
+    # "FN1": ["food_1_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA"],
+    # "FN2": ["food_2_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    # "F12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA"],
+    # "P12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
+    # "T12": ["neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
+    # "N12": ["nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"]
 }
 
 # Define the multi-class classification tasks to be performed
@@ -114,24 +114,26 @@ binary_tasks = {
 multiclass_tasks = {
     "3A": ["food_dec_pseudo_PCA", "positive_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
     "3B": ["food_1_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA"],
-    "3C": ["food_2_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
-    "4A": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
-    "4B": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
-    "4C": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
-    "6": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA",
-          "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"]
+    # "3C": ["food_2_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
+    # "4A": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    # "4B": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
+    # "4C": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
+    # "6": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA",
+    #       "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"]
 }
 
 # Define the chance levels for the binary classification tasks for Wilcoxon signed-rank test
 binary_chance = {
-    "12": 0.66, "FN": 0.50, "FP": 0.50, "FT": 0.50, "PT": 0.50, 
-    "FN1": 0.66, "FN2": 0.66, "F12": 0.50, "P12": 0.50, "T12": 0.50, "N12": 0.50
+    "12": 0.50, "FN": 0.66, 
+    # "FP": 0.50, "FT": 0.50, "PT": 0.50, 
+    # "FN1": 0.66, "FN2": 0.66, "F12": 0.50, "P12": 0.50, "T12": 0.50, "N12": 0.50
 }
 
 # Define the chance levels for the multi-class classification tasks for Wilcoxon signed-rank test
 multi_chance = {
-    "3A": 0.33, "3B": 0.33, "3C": 0.33, "4A": 0.25, "4B": 0.25, 
-    "4C": 0.25, "6": 0.17
+    "3A": 0.33, "3B": 0.33, 
+    # "3C": 0.33, "4A": 0.33, "4B": 0.25, 
+    # "4C": 0.25, "6": 0.17
 }
 
 # ============================================================ #

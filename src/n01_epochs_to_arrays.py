@@ -124,7 +124,7 @@ def convert_mat_to_epochsFIF(mat_input_directory: str, fif_output_directory: str
     # Iterate over the matched files
     for file in file_paths:
         # Take the unique part of the file - subject number XXX
-        subject_num = re.split(r"[_.]+", file.name)[3]
+        subject_num = re.split(r"[_.]+", file.name)[1]
 
         # Convert .mat to dict
         sub_dict = convert_mat_to_dict(file)
@@ -232,23 +232,27 @@ def derive_class_labels(npy_IO_directory):
     """
     Derive new class labels from the base conditions.
     """
-    # Get and sort the list of subject files and save folders
-    subject_files = sorted(glob.glob(npy_IO_directory))
-    save_folders = sorted(glob.glob(npy_IO_directory))
+
+    # Get and sort the list of subject folders (ensure we're matching subdirectories)
+    subject_files = sorted(glob.glob(os.path.join(npy_IO_directory, '*/')))  # Match all subdirectories
+    save_folders = sorted(glob.glob(os.path.join(npy_IO_directory, '*/')))  # Match all subdirectories
 
     # Ensure the lengths match before iterating
     assert len(subject_files) == len(save_folders), "Number of files and saving directories do not match."
 
-     # Process each subject
+    # Process each subject
     for file, saving_folder in zip(subject_files, save_folders):
+        # Get the directory name from the full file path
+        subject_dir = os.path.dirname(file)
+
         # Define file paths for each condition
         condition_files = {
-            'food_1': os.path.join(file, 'food_1.npy'),
-            'positive_1': os.path.join(file, 'positive_1.npy'),
-            'neutral_1': os.path.join(file, 'neutral_1.npy'),
-            'food_2': os.path.join(file, 'food_2.npy'),
-            'positive_2': os.path.join(file, 'positive_2.npy'),
-            'neutral_2': os.path.join(file, 'neutral_2.npy')
+            'food_1': os.path.join(subject_dir, 'food_1.npy'),
+            'positive_1': os.path.join(subject_dir, 'positive_1.npy'),
+            'neutral_1': os.path.join(subject_dir, 'neutral_1.npy'),
+            'food_2': os.path.join(subject_dir, 'food_2.npy'),
+            'positive_2': os.path.join(subject_dir, 'positive_2.npy'),
+            'neutral_2': os.path.join(subject_dir, 'neutral_2.npy')
         }
 
         # Check if all files exist

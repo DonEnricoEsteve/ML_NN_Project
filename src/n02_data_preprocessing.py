@@ -140,9 +140,9 @@ def perform_pca_all_time(data, n_components=10):
         
         # Store the transformed data and PCA model
         pca_transformed_data.append(transformed.T)  # Transpose back to (n_components x n_timepoints)
-        pca_models.append(pca)
+        # pca_models.append(pca)
     
     # Stack transformed data back into a 3D array (n_pseudotrials x n_components x n_timepoints)
     pca_transformed_data = np.stack(pca_transformed_data, axis=0)
 
-    return pca_transformed_data, pca_models
+    return pca_transformed_data
