@@ -228,6 +228,36 @@ def convert_epochsFIF_to_npy(fif_input_directory: str, npy_output_directory: str
 
         print(f"Processed and saved data for {file.name}.")
 
+def halve_trials(data):
+    """
+    Averages every two consecutive trials along the first axis (trial axis).
+    If the number of trials is odd, averages the last trial with the previous ones.
+    
+    Parameters:
+    data (numpy.ndarray): 3D array of shape (n_trials, n_channels, n_time)
+    
+    Returns:
+    numpy.ndarray: 3D array with averaged trials, shape (n_trials // 2, n_channels, n_time) for even trials,
+                    and (n_trials // 2 + 1, n_channels, n_time) for odd trials.
+    """
+    n_trials, n_channels, n_time = data.shape
+    
+    if n_trials % 2 == 0:
+        # For even number of trials, average every two trials
+        averaged_data = data.reshape(n_trials // 2, 2, n_channels, n_time).mean(axis=1)
+    else:
+        # For odd number of trials, average every two trials except the last
+        # Reshape and average the pairs of trials
+        paired_data = data[:-1].reshape(n_trials // 2, 2, n_channels, n_time).mean(axis=1)
+        
+        # Average the last two trials
+        last_trial = data[-2:].mean(axis=0)  # Average the last two trials
+        
+        # Concatenate the averaged pairs with the averaged last trial
+        averaged_data = np.vstack([paired_data, last_trial[np.newaxis]])
+    
+    return averaged_data
+
 def derive_class_labels(npy_IO_directory):
     """
     Derive new class labels from the base conditions.
@@ -274,12 +304,20 @@ def derive_class_labels(npy_IO_directory):
         pres_1 = np.vstack([data['food_1'], data['positive_1'], data['neutral_1']])
         pres_2 = np.vstack([data['food_2'], data['positive_2'], data['neutral_2']])
 
+        # Reduce non-food trials by averaging every two trials (to remove class imbalance)
+        nonfood_eq = halve_trials(nonfood)
+        nonfood_1_eq = halve_trials(nonfood_1)
+        nonfood_2_eq = halve_trials(nonfood_2)
+
         # Save the stacked data using derived_conds
         save_data = {
             'food.npy': food,
             'nonfood.npy': nonfood,
             'nonfood_1.npy': nonfood_1,
             'nonfood_2.npy': nonfood_2,
+            'nonfood_eq.npy': nonfood_eq,
+            'nonfood_1_eq.npy': nonfood_1_eq,
+            'nonfood_2_eq.npy': nonfood_2_eq,
             'positive.npy': positive,
             'neutral.npy': neutral,
             'pres_1.npy': pres_1,
