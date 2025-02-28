@@ -37,13 +37,13 @@ from sklearn.manifold import MDS
 # Define seed for reproducibility
 np.random.seed(42)
 
-# Set working directory
-wd = "Z:/Don/ML_Project"
+# Set working directory. Set your own directory.
+wd = "Z:\Don\ML_WD" 
 
 # Define event-related field (ERF) components
-component_start_times = [0.118, 0.171, 0.239, 0.350]
-component_end_times = [0.155, 0.217, 0.332, 0.799]
-component_labels = ['m100', 'm200', 'm300', 'mLPP']
+component_start_times = [0, 0.118, 0.171, 0.239, 0.350]
+component_end_times = [0.799, 0.155, 0.217, 0.332, 0.799]
+component_labels = ['PS', 'm100', 'm200', 'm300', 'mLPP']
 
 components_with_colors = [
     (component_start_times[0], component_end_times[0], "(a)", "Post-Stimulus Window (0-800 ms)", "lightgray"),
@@ -58,33 +58,33 @@ components_with_colors = [
 # ============================================== #
 
 # Set directory where preprocessed MEG files (.mat) are located
-mat_directory = f"{wd}/Evoked_responses_mat"
+mat_directory = f"{wd}/Evoked_mat"
 
 # Set directory where preprocessed MEG files (.fif) are (to be) located
 fif_directory = f"{wd}/Evoked_fif"
 
 # Set directory where preprocessed MEG files (.npy) are (to be) located
-npy_directory = f"{wd}/Window files/M200/evoked_cond_concat_binary_and_multiclass"
+npy_directory = f"{wd}/Evoked_npy"
 
 # Define the names of the output numpy arrays
 base_conds = ['food_1.npy', 'food_2.npy', 'positive_1.npy', 'positive_2.npy', 'neutral_1.npy', 'neutral_2.npy']
 
 # Define the names of the output numpy arrays derived from the base conditions
 derived_conds = ['food.npy', 'nonfood.npy', 'nonfood_1.npy', 'nonfood_2.npy', 
-                 'positive.npy', 'neutral.npy', 'pres_1.npy' 'pres_2.npy']
+                 'positive.npy', 'neutral.npy', 'pres_1.npy', 'pres_2.npy']
 
 # ============================================== #
 # Part 2: Data Preprocessing
 # ============================================== #
 
 # Set directory where temporally decimated arrays are (to be) located
-decimated_npy_directory = f"{wd}/Window files/M200/Preprocessed_data"
+decimated_npy_directory = f"{wd}/Evoked_dec"
 
 # Set directory where calculated pseudo-trial arrays are (to be) located
-pseudotrial_npy_directory = f"{wd}/Window files/M200/Preprocessed_dec_pseudo"
+pseudotrial_npy_directory = f"{wd}/Evoked_pseudo"
 
 # Set directory where PCA arrays are (to be) located
-PCA_npy_directory = f"{wd}/Window files/M200/Preprocessed_dec_pseudo_PCA"
+PCA_npy_directory = f"{wd}/Evoked_PCA"
 
 # ============================================== #
 # Part 3: General decoding
@@ -98,15 +98,19 @@ results_dir = f"{wd}/Results"
 binary_tasks = {
     "12": ["pres_1_dec_pseudo_PCA", "pres_2_dec_pseudo_PCA"],
     "FN": ["food_dec_pseudo_PCA", "nonfood_dec_pseudo_PCA"],
+    "FNeq": ["food_dec_pseudo_PCA", "nonfood_eq_dec_pseudo_PCA"],
     "FP": ["food_dec_pseudo_PCA", "positive_dec_pseudo_PCA"],
     "FT": ["food_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
     "PT": ["positive_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
     "FN1": ["food_1_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA"],
+    "FN1eq": ["food_dec_pseudo_PCA", "nonfood_1_eq_dec_pseudo_PCA"],
     "FN2": ["food_2_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    "FN2eq": ["food_dec_pseudo_PCA", "nonfood_2_eq_dec_pseudo_PCA"],
     "F12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA"],
     "P12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
     "T12": ["neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
-    "N12": ["nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"]
+    "N12": ["nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    "N12eq": ["nonfood_1_eq_dec_pseudo_PCA", "nonfood_2_eq_dec_pseudo_PCA"],
 }
 
 # Define the multi-class classification tasks to be performed
@@ -116,6 +120,7 @@ multiclass_tasks = {
     "3B": ["food_1_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA"],
     "3C": ["food_2_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
     "4A": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    "4Aeq": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_eq_dec_pseudo_PCA", "nonfood_2_eq_dec_pseudo_PCA"],
     "4B": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
     "4C": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
     "6": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA",
@@ -124,14 +129,15 @@ multiclass_tasks = {
 
 # Define the chance levels for the binary classification tasks for Wilcoxon signed-rank test
 binary_chance = {
-    "12": 0.66, "FN": 0.50, "FP": 0.50, "FT": 0.50, "PT": 0.50, 
-    "FN1": 0.66, "FN2": 0.66, "F12": 0.50, "P12": 0.50, "T12": 0.50, "N12": 0.50
+    "12": 0.50, "FN": 0.66, "FNeq": 0.50, "FP": 0.50, "FT": 0.50, "PT": 0.50, "FN1": 0.66, "FN1eq": 0.50, 
+    "FN2": 0.66, "FN2eq": 0.50, "F12": 0.50, "P12": 0.50, "T12": 0.50, "N12": 0.50, "N12eq": 0.50
 }
 
 # Define the chance levels for the multi-class classification tasks for Wilcoxon signed-rank test
 multi_chance = {
-    "3A": 0.33, "3B": 0.33, "3C": 0.33, "4A": 0.25, "4B": 0.25, 
-    "4C": 0.25, "6": 0.17
+    "3A": 0.33, "3B": 0.33, "3C": 0.33, 
+    "4A": 0.33, "4Aeq": 0.25, "4B": 0.25, 
+    "4C": 0.25, "6": 0.166
 }
 
 # ============================================================ #
@@ -166,7 +172,7 @@ condition_groups = [
 ]
 
 # Define the directory containing the arrays before preprocessing during the post-stimulus window for plotting Figure S1
-input_dir_for_FigS1 = f'{wd}/Window files/M200/evoked_cond_concat_binary_and_multiclass'
+input_dir_for_FigS1 = f'{wd}/Evoked_npy'
 
 # ============================================================ #
 # Part 7: Representational Similarity Analysis (RSA)
@@ -193,4 +199,4 @@ cond_short_labels = ["FS1", "FM1", "FL1", "FS2", "FM2", "FL2", "PS1", "PM1", "PL
                      "PS2", "PM2", "PL2", "NS1", "NM1", "NL1", "NS2", "NM2", "NL2"]
 
 # Set directory to save RSA files
-RSA_wd = f"{wd}/RSA files"
+RSA_wd = f"{wd}/RSA_files"

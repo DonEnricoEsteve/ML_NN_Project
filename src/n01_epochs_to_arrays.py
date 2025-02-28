@@ -124,7 +124,7 @@ def convert_mat_to_epochsFIF(mat_input_directory: str, fif_output_directory: str
     # Iterate over the matched files
     for file in file_paths:
         # Take the unique part of the file - subject number XXX
-        subject_num = re.split(r"[_.]+", file.name)[3]
+        subject_num = re.split(r"[_.]+", file.name)[1]
 
         # Convert .mat to dict
         sub_dict = convert_mat_to_dict(file)
@@ -228,27 +228,61 @@ def convert_epochsFIF_to_npy(fif_input_directory: str, npy_output_directory: str
 
         print(f"Processed and saved data for {file.name}.")
 
+def halve_trials(data):
+    """
+    Averages every two consecutive trials along the first axis (trial axis).
+    If the number of trials is odd, averages the last trial with the previous ones.
+    
+    Parameters:
+    data (numpy.ndarray): 3D array of shape (n_trials, n_channels, n_time)
+    
+    Returns:
+    numpy.ndarray: 3D array with averaged trials, shape (n_trials // 2, n_channels, n_time) for even trials,
+                    and (n_trials // 2 + 1, n_channels, n_time) for odd trials.
+    """
+    n_trials, n_channels, n_time = data.shape
+    
+    if n_trials % 2 == 0:
+        # For even number of trials, average every two trials
+        averaged_data = data.reshape(n_trials // 2, 2, n_channels, n_time).mean(axis=1)
+    else:
+        # For odd number of trials, average every two trials except the last
+        # Reshape and average the pairs of trials
+        paired_data = data[:-1].reshape(n_trials // 2, 2, n_channels, n_time).mean(axis=1)
+        
+        # Average the last two trials
+        last_trial = data[-2:].mean(axis=0)  # Average the last two trials
+        
+        # Concatenate the averaged pairs with the averaged last trial
+        averaged_data = np.vstack([paired_data, last_trial[np.newaxis]])
+    
+    return averaged_data
+
 def derive_class_labels(npy_IO_directory):
     """
     Derive new class labels from the base conditions.
     """
-    # Get and sort the list of subject files and save folders
-    subject_files = sorted(glob.glob(npy_IO_directory))
-    save_folders = sorted(glob.glob(npy_IO_directory))
+
+    # Get and sort the list of subject folders (ensure we're matching subdirectories)
+    subject_files = sorted(glob.glob(os.path.join(npy_IO_directory, '*/')))  # Match all subdirectories
+    save_folders = sorted(glob.glob(os.path.join(npy_IO_directory, '*/')))  # Match all subdirectories
 
     # Ensure the lengths match before iterating
     assert len(subject_files) == len(save_folders), "Number of files and saving directories do not match."
 
-     # Process each subject
+    # Process each subject
     for file, saving_folder in zip(subject_files, save_folders):
+        # Get the directory name from the full file path
+        subject_dir = os.path.dirname(file)
+
         # Define file paths for each condition
         condition_files = {
-            'food_1': os.path.join(file, 'food_1.npy'),
-            'positive_1': os.path.join(file, 'positive_1.npy'),
-            'neutral_1': os.path.join(file, 'neutral_1.npy'),
-            'food_2': os.path.join(file, 'food_2.npy'),
-            'positive_2': os.path.join(file, 'positive_2.npy'),
-            'neutral_2': os.path.join(file, 'neutral_2.npy')
+            'food_1': os.path.join(subject_dir, 'food_1.npy'),
+            'positive_1': os.path.join(subject_dir, 'positive_1.npy'),
+            'neutral_1': os.path.join(subject_dir, 'neutral_1.npy'),
+            'food_2': os.path.join(subject_dir, 'food_2.npy'),
+            'positive_2': os.path.join(subject_dir, 'positive_2.npy'),
+            'neutral_2': os.path.join(subject_dir, 'neutral_2.npy')
         }
 
         # Check if all files exist
@@ -270,12 +304,20 @@ def derive_class_labels(npy_IO_directory):
         pres_1 = np.vstack([data['food_1'], data['positive_1'], data['neutral_1']])
         pres_2 = np.vstack([data['food_2'], data['positive_2'], data['neutral_2']])
 
+        # Reduce non-food trials by averaging every two trials (to remove class imbalance)
+        nonfood_eq = halve_trials(nonfood)
+        nonfood_1_eq = halve_trials(nonfood_1)
+        nonfood_2_eq = halve_trials(nonfood_2)
+
         # Save the stacked data using derived_conds
         save_data = {
             'food.npy': food,
             'nonfood.npy': nonfood,
             'nonfood_1.npy': nonfood_1,
             'nonfood_2.npy': nonfood_2,
+            'nonfood_eq.npy': nonfood_eq,
+            'nonfood_1_eq.npy': nonfood_1_eq,
+            'nonfood_2_eq.npy': nonfood_2_eq,
             'positive.npy': positive,
             'neutral.npy': neutral,
             'pres_1.npy': pres_1,

@@ -177,14 +177,31 @@ def evaluate_decoding(list_binary_accuracies, list_multi_accuracies,
     
     # Evaluate Binary Classification Results
     print("Evaluating Binary Classification...\n")
+
+    # Ensure binary_conditions_set is iterated over correctly (you can also use zip if you need to match binary_conditions_set with list_binary_accuracies)
     for condition_name, binary_conditions_set in binary_tasks.items():
-        b_acc = list_binary_accuracies.pop(0)  # Get the accuracies for the current categorization set
+        # Get the first list of accuracies (assuming list_binary_accuracies is a list of lists)
+        b_acc = list_binary_accuracies[0]  # Get the first list for the current categorization set
+        list_binary_accuracies = list_binary_accuracies[1:]  # Remove the first list after using it
+
+        # Get the chance level for the current condition
         chance_level = binary_chance_levels.get(condition_name, 0.50)
+
+        # Evaluate decoding with the extracted binary accuracy and chance level
         helper_evaluate_decoding(b_acc, condition_name, chance_level)
 
     # Evaluate Multi-Class Classification Results
     print("Evaluating Multi-Class Classification...\n")
+
+    # Ensure multiclass_conditions_set is iterated over correctly (you can also use zip if you need to match multiclass_conditions_set with list_multi_accuracies)
     for condition_name, multi_conditions_set in multiclass_tasks.items():
-        m_acc = list_multi_accuracies.pop(0)  # Get the accuracies for the current categorization set
+        # Get the first list of accuracies (assuming list_multi_accuracies is a list of lists)
+        m_acc = list_multi_accuracies[0]  # Get the first list for the current categorization set
+        list_multi_accuracies = list_multi_accuracies[1:]  # Remove the first list after using it
+
+        # Get the chance level for the current condition
         chance_level = multiclass_chance_levels.get(condition_name, 0.33)
+
+        # Evaluate decoding with the extracted multi-class accuracy and chance level
         helper_evaluate_decoding(m_acc, condition_name, chance_level)
+

@@ -34,11 +34,11 @@ preprocess_helper(input_dir=npy_directory, output_dir=decimated_npy_directory,
 # Perform pseudo-trial calculation to reduce the signal-to-noise ratio from single trials (first axis)
 # Change n_groups depending on your need
 preprocess_helper(input_dir=decimated_npy_directory, output_dir=pseudotrial_npy_directory, 
-                  process_func=calculate_pseudo_trials, n_groups=10, suffix='dec_pseudo')
+                  process_func=calculate_pseudo_trials, n_groups=10, suffix='pseudo')
 
 # Perform principal component analysis (PCA) to reduce data dimensionality (middle axis)
 preprocess_helper(input_dir=pseudotrial_npy_directory, output_dir=PCA_npy_directory, 
-                  process_func=perform_pca_all_time, n_components=10, suffix='dec_pseudo_PCA')
+                  process_func=perform_pca_all_time, n_components=10, suffix='PCA')
 
 # ============================================== #
 # Part 3: General decoding
@@ -46,30 +46,31 @@ preprocess_helper(input_dir=pseudotrial_npy_directory, output_dir=PCA_npy_direct
 
 # Run binary classification (n=11 tasks)
 # Define output filename (recommended convention is window_binsize_groups_components)
-perform_general_decoding(input_dir=PCA_npy_directory, tasks=binary_tasks, 
+perform_general_decoding(base_dir=PCA_npy_directory, tasks=binary_tasks, 
                          classification_type='binary', output_filename="M200_2_10_10")
 
 # Run multi-class classification (n=7 tasks)
 # Define output filename (recommended convention is window_binsize_groups_components)
-perform_general_decoding(input_dir=PCA_npy_directory, tasks=multiclass_tasks, 
+perform_general_decoding(base_dir=PCA_npy_directory, tasks=multiclass_tasks, 
                          classification_type='multi', output_filename="M200_2_10_10")
 
 # Load the resulting lists (from general decoding) of within-subject accuracies for each task (n=18)
-list_binary_accuracies = np.load("Z:/Don/ML_Project/Results/list_binary_accuracies_M200_2_10_10.npy")
-list_multi_accuracies = np.load("Z:/Don/ML_Project/Results/list_multi_accuracies_M200_2_10_10.npy")
+list_binary_accuracies = np.load(f"{results_dir}/list_binary_accuracies_M200_2_10_10.npy")
+list_multi_accuracies = np.load(f"{results_dir}/list_multi_accuracies_M200_2_10_10.npy")
 
-# Perform statistical analysis for each task (Wilcoxon signed-rank test)
+# # Perform statistical analysis for each task (Wilcoxon signed-rank test)
 evaluate_decoding(list_binary_accuracies=list_binary_accuracies, list_multi_accuracies=list_multi_accuracies,
                   binary_tasks=binary_tasks, multiclass_tasks=multiclass_tasks,
-                  binary_chance=binary_chance, multiclass_chance=multi_chance)
+                  binary_chance_levels=binary_chance, multiclass_chance_levels=multi_chance)
 
 # ============================================================ #
 # Part 4: Plot summary statistics and general decoding results
 # ============================================================ #
 
-# Plot Figure 1. Distribution of the difference between within-subject decoding accuracy (n=42) and chance level for each classification task
+# # Plot Figure 1. Distribution of the difference between within-subject decoding accuracy (n=42) and chance level for each classification task
 plot_distribution_diff(list_binary_accuracies=list_binary_accuracies, list_multi_accuracies=list_multi_accuracies,
-              binary_chance=binary_chance, multiclass_chance=multi_chance)
+                       binary_tasks=binary_tasks, multiclass_tasks=multiclass_tasks,
+                       binary_chance=binary_chance, multiclass_chance=multi_chance)
 
 # Plot Figure 2. Across-subject decoding accuracies across different time windows for binary tasks involving the food and non-food contrasts 
 list_binary_acc = [np.load(f'{results_dir}/{file}') for file in binary_files_for_Fig2]
@@ -82,7 +83,7 @@ final_rms, final_sem = calculate_summary_statistics(input_dir=input_dir_for_FigS
 for labels, txt, label in condition_groups:
     plot_summary_signals(final_rms=final_rms, final_sem=final_sem, labels=labels, txt=txt, label=label)
 
-# Plot Figure S1. Group-level (across 42 subjects) descriptive summary for MEG evoked responses by condition and window (n=5)
+# Plot Figure S2. Group-level (across 42 subjects) descriptive summary for MEG evoked responses by condition and window (n=5)
 for start, end, txt, title, color in components_with_colors:
     plot_summary_boxplots(final_rms=final_rms, start_time_ms=start, end_time_ms=end, txt=txt, title=title, color=color)
 
@@ -100,7 +101,7 @@ RSA_data_dict = populate_data_dict(npy_directory=f"{RSA_wd}/M200_conds_PCA", con
 # Perform RSA
 RSA_results = compute_pairwise_rsa(data_dict=RSA_data_dict, conditions=pca_orig_cond_list, save_filename='M200_RSA')
 
-# Plot representation dissimilarity matrix (RDM) and its corresponding multi-dimensional scaling (MDS) plot
+# Plot representation dissimilarity matrix (RDM, Figure S3) and its corresponding multi-dimensional scaling (MDS) plot (Figure 5)
 plot_confusion_matrix_with_mds(auc_results=RSA_results.item(), conditions=pca_orig_cond_list, condition_labels=cond_short_labels,
                                title1="Representational Dissimilarity Matrix (RDM) during the m200 window",
                                title2="Multidimensional Scaling (MDS) Plot of the RDM during the m200 window")
