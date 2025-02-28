@@ -1,3 +1,8 @@
 Evoked_fif
 processed_evoked
 classifier_weights
+processed_conditions
+processed_time_windows
+binned_data
+pseudo_trial
+sensor_projection
