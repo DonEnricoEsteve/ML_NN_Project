@@ -149,7 +149,7 @@ def preprocess_helper(input_dir, output_dir, process_func, suffix='processed', *
 
 #     return pca_transformed_data
 
-def calculate_pseudo_trials_with_pca(data, n_groups=None, n_components=None):
+def calculate_pseudo_trials(data, n_groups=10):
     """
     Function that computes pseudo-trials from raw (single) trials and performs PCA to reduce the number of channels.
     For each condition, raw trials (n=~20-30) were randomly placed in 5 groups then averaged.
@@ -167,6 +167,9 @@ def calculate_pseudo_trials_with_pca(data, n_groups=None, n_components=None):
 
     # Get the length of each axis of the 3D matrix
     n_epochs, n_channels, n_times = data.shape
+
+    # # Take absolute value
+    # data = np.abs(data)
 
     # Step 1: Average the data over the time axis (n_times)
     data_avg_time = np.mean(data, axis=2)  # Resulting shape: (n_epochs, n_channels)
@@ -187,11 +190,6 @@ def calculate_pseudo_trials_with_pca(data, n_groups=None, n_components=None):
 
     # Step 4: Stack the pseudo-trials into a 2D array (n_groups x n_channels)
     pseudo_trials = np.stack(group_pseudo_trials, axis=0)  # Shape: (n_groups, n_channels)
-
-    # # Step 5: Apply PCA to reduce the number of channels (n_components)
-    # pca = PCA(n_components=n_components)
-    # pca_transformed = pca.fit_transform(pseudo_trials)  # Shape: (n_groups, n_components)
-    # return pca_transformed
 
     return pseudo_trials
 

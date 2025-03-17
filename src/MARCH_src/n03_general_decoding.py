@@ -38,7 +38,9 @@ def reshape_data(data_dict, conditions):
     # Convert lists to numpy arrays and return
     return np.vstack(X), np.array(y), np.array(groups)
 
-def perform_general_decoding(base_dir, tasks, classification_type, output_filename):
+
+def perform_general_decoding(base_dir, tasks, classification_type, output_filename, 
+                             variance_threshold=None, shuffle_labels=False):
     """
     This function runs classification for both binary and multi-class conditions.
     
@@ -47,6 +49,8 @@ def perform_general_decoding(base_dir, tasks, classification_type, output_filena
     - tasks (dict): Dictionary of tasks to be decoded
     - classification_type (str): 'binary' or 'multi' to specify the type of classification
     - output_filename (str): Filename for the results
+    - variance_threshold (float, optional): Variance threshold for PCA. If None, PCA is not applied.
+    - shuffle_labels (bool, optional): Whether to shuffle the labels before training the model. Default is False.
     """
 
     # List to store accuracies for each categorization set
@@ -104,6 +108,19 @@ def perform_general_decoding(base_dir, tasks, classification_type, output_filena
             X_train = scaler.fit_transform(X_train)
             X_test = scaler.transform(X_test)
 
+            # Apply PCA if specified (based on variance threshold)
+            if variance_threshold is not None:
+                pca = PCA(n_components=variance_threshold)
+                X_train = pca.fit_transform(X_train)
+                X_test = pca.transform(X_test)
+                print(f"Applied PCA with variance threshold {variance_threshold * 100}%.")
+                print(f"Number of components retained: {pca.n_components_}")
+            
+            # Shuffle labels if the flag is True
+            if shuffle_labels:
+                y_train = shuffle(y_train, random_state=42)
+                print("Labels shuffled.")
+
             # Build the stacking classifier with default base models
             stacking_clf.fit(X_train, y_train)
 
@@ -111,16 +128,17 @@ def perform_general_decoding(base_dir, tasks, classification_type, output_filena
             y_pred = stacking_clf.predict(X_test)
             accuracy = accuracy_score(y_test, y_pred)
             accuracies.append(accuracy)
-            print(f"Subject {test_subject} accuracy: {accuracy:.2f}\n")
+            print(f"Subject {test_subject} accuracy: {accuracy:.3f}\n")
 
         # Append accuracies for the current categorization set
         list_accuracies.append(accuracies)
 
         # Overall accuracy for the current set
-        print(f"Mean accuracy for {task_key}: {np.mean(accuracies):.2f}")
+        print(f"Mean accuracy for {task_key}: {np.mean(accuracies):.3f}")
 
     # Save the list of accuracies to a file
-    np.save(f"{results_dir}/list_{classification_type}_accuracies_{output_filename}.npy", list_accuracies) 
+    np.save(f"{results_dir}/{output_filename}_accuracies_{classification_type}.npy", list_accuracies)
+
 
 def helper_evaluate_decoding(accuracies, condition_name, chance_level):
     """
@@ -159,8 +177,8 @@ def helper_evaluate_decoding(accuracies, condition_name, chance_level):
     print("\n" + "="*50 + "\n")  # Separator for readability
 
 
-def evaluate_decoding(list_binary_accuracies, list_multi_accuracies, 
-                      binary_tasks, multiclass_tasks, 
+def evaluate_decoding(list_binary_accuracies, list_multi_accuracies,
+                      binary_tasks, multiclass_tasks,
                       binary_chance_levels, multiclass_chance_levels):
     """
     Evaluates the decoding performance for both binary and multi-class classification conditions. 
