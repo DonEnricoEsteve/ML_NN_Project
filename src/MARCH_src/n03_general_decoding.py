@@ -1,14 +1,54 @@
 from utils import *
 
+# def reshape_data(data_dict, conditions):
+#     """
+#     Reshape data from multiple subjects and conditions for classification.
+
+#     Parameters:
+#     - data_dict (dict): Keys are subject identifiers (e.g., "subject1") and values are dictionaries,
+#                          with condition names as keys and 2D numpy arrays as values (after PCA).
+#     - conditions (list of str): Names of conditions to include.
+
+#     Returns:
+#     - X (2D np.ndarray): Array of shape (total_pseudotrials, n_components) where n_components is the number of PCA components.
+#     - y (1D np.ndarray): Array of shape (total_pseudotrials,), containing labels for each pseudo-trial.
+#     - groups (1D np.ndarray): Array of shape (total_pseudotrials,), containing subject identifiers for each pseudo-trial.
+#     """
+    
+#     X, y, groups = [], [], []  # Initialize lists to store reshaped data, labels, and groups
+    
+#     # Iterate over subjects and their data
+#     for subject, subject_data in data_dict.items():
+#         # Iterate over conditions and their indices
+#         for cond_idx, condition in enumerate(conditions):
+#             # Check if the condition exists for the current subject
+#             if condition in subject_data:
+#                 data = subject_data[condition] 
+#                 n_pseudotrials = data.shape[0]  # Number of pseudo-trials
+
+#                 # No need to reshape the data since it's already in the shape (n_pseudotrials, n_components)
+#                 X.append(data)
+
+#                 # Append the condition label for each pseudo-trial
+#                 y.extend([cond_idx] * n_pseudotrials)
+
+#                 # Append the subject identifier for each pseudo-trial
+#                 groups.extend([subject] * n_pseudotrials)
+
+#     # Convert lists to numpy arrays and return
+#     return np.vstack(X), np.array(y), np.array(groups)
+
+
 def reshape_data(data_dict, conditions):
     """
-    Reshape data from multiple subjects and conditions for classification.
-
+    Reshape data from multiple subjects and conditions for classification, and balance the classes
+    by randomly sampling half of the larger class for each subject.
+    
     Parameters:
     - data_dict (dict): Keys are subject identifiers (e.g., "subject1") and values are dictionaries,
                          with condition names as keys and 2D numpy arrays as values (after PCA).
     - conditions (list of str): Names of conditions to include.
-
+    
     Returns:
     - X (2D np.ndarray): Array of shape (total_pseudotrials, n_components) where n_components is the number of PCA components.
     - y (1D np.ndarray): Array of shape (total_pseudotrials,), containing labels for each pseudo-trial.
@@ -19,24 +59,51 @@ def reshape_data(data_dict, conditions):
     
     # Iterate over subjects and their data
     for subject, subject_data in data_dict.items():
-        # Iterate over conditions and their indices
+        # Collect data by condition for the current subject
+        condition_data = {condition: [] for condition in conditions}
+        condition_labels = {condition: [] for condition in conditions}
+        condition_groups = {condition: [] for condition in conditions}
+        
+        # Collect the data for each condition and subject
         for cond_idx, condition in enumerate(conditions):
-            # Check if the condition exists for the current subject
             if condition in subject_data:
-                data = subject_data[condition]  # Get the PCA-transformed data for the current condition
-                n_pseudotrials = data.shape[0]  # Number of pseudo-trials
-
-                # No need to reshape the data since it's already in the shape (n_pseudotrials, n_components)
-                X.append(data)
-
-                # Append the condition label for each pseudo-trial
-                y.extend([cond_idx] * n_pseudotrials)
-
-                # Append the subject identifier for each pseudo-trial
-                groups.extend([subject] * n_pseudotrials)
-
-    # Convert lists to numpy arrays and return
-    return np.vstack(X), np.array(y), np.array(groups)
+                data = subject_data[condition]
+                n_pseudotrials = data.shape[0]
+                
+                # Store the data, labels, and groups for each condition
+                condition_data[condition].append(data)
+                condition_labels[condition].extend([cond_idx] * n_pseudotrials)
+                condition_groups[condition].extend([subject] * n_pseudotrials)
+        
+        # For each condition, downsample to the minimum number of pseudo-trials per subject
+        min_pseudotrials = min(len(condition_labels[condition]) for condition in conditions)
+        
+        for condition in conditions:
+            n_pseudotrials = len(condition_labels[condition])
+            
+            if n_pseudotrials > min_pseudotrials:
+                # Concatenate the data for this condition to a single array
+                concatenated_data = np.concatenate(condition_data[condition], axis=0)
+                
+                # Randomly sample to match the minimum pseudo-trials for this subject
+                indices = np.random.choice(concatenated_data.shape[0], min_pseudotrials, replace=False)
+                
+                # Downsample the data, labels, and groups
+                condition_data[condition] = concatenated_data[indices]
+                condition_labels[condition] = [condition_labels[condition][i] for i in indices]
+                condition_groups[condition] = [condition_groups[condition][i] for i in indices]
+            
+            # Append the data, labels, and groups for this subject and condition
+            X.append(condition_data[condition])
+            y.extend(condition_labels[condition])
+            groups.extend(condition_groups[condition])
+    
+    # Convert the lists into numpy arrays for the final output
+    X = np.concatenate(X, axis=0)
+    y = np.array(y)
+    groups = np.array(groups)
+    
+    return X, y, groups
 
 
 def perform_general_decoding(base_dir, tasks, classification_type, output_filename, 
@@ -120,6 +187,9 @@ def perform_general_decoding(base_dir, tasks, classification_type, output_filena
             if shuffle_labels:
                 y_train = shuffle(y_train, random_state=42)
                 print("Labels shuffled.")
+
+            print(f"X_train shape:{X_train.shape}")
+            print(f"X_test shape:{X_test.shape}")
 
             # Build the stacking classifier with default base models
             stacking_clf.fit(X_train, y_train)

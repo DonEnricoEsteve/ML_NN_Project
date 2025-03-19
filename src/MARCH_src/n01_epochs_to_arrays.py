@@ -1,187 +1,7 @@
 from utils import *
 
-def convert_mat_to_dict(file):
-    """
-    Converts a mat file to a dictionary using the pymatreader module.
-    The .mat file for each subject is named datafinalLow_subXXX
-
-    Parameters:
-    - file (str) - MEG recordings that underwent signal preprocessing in FieldTrip.  
-
-    Returns: A dictionary with each Matlab field as a key
-    """
-
-    try:
-        # Use pymatreader functionality to convert .mat to dict
-        dict_from_mat = read_mat(file)
-        return dict_from_mat
-    except PermissionError as e:
-        print(f"Permission error in path: {file}. Skipping. \n {e}")
-    except Exception as e:
-        print(f"A non premission error occured in path: {file}. \n {e}. \n Printing error traceback: \n")
-        traceback.print_exc()
-
-def create_mne_info_all(sub_dict):
-    """
-    Takes information from a dictionary to populate the create_info() function of MNE.
-
-    Parameters:
-    - sub_dict (dict) - A dictionary containing information from .mat files  
-
-    Returns: An mne.Info object with information about the sensors and methods of measurement
-    """
-    try:
-        # Take the name of each channel
-        ch_names = sub_dict.get("datafinalLow").get("grad").get("label")[0:246]
-
-        # Take only the channels of type MEG ('mag')
-        ch_types = np.array(246 * ['mag'])
-
-        # Take the sampling frequency = 1017 Hz
-        sfreq = sub_dict.get("datafinalLow").get("fsample")
-
-        # Create the mne.Info object
-        mne_info = mne.create_info(ch_names, sfreq, ch_types, verbose=None)
-        return mne_info
-    
-    except Exception as e:
-        print(f"an exception has occured: {e}. \n Printing error traceback \n")
-        traceback.print_exc()
-
-def convert_dict_to_epochs(sub_dict, mne_info):
-    """
-    Creates an mne.EpochsArray class that is used in the MNE-Python pipeline
-
-    Parameters:
-    - sub_dict (dict) - A dictionary containing information from .mat files
-    - mne_info (var) - An mne.Info object with information about the sensors and methods of measurement
-
-    Returns: An mne.EpochsArray class 
-    """
-
-    # Extract data and trial info
-    data = sub_dict.get("datafinalLow").get("trial") 
-    tmin = -0.3
-    event_id = np.array(sub_dict.get("datafinalLow").get("trialinfo")[:, 0], dtype=int)
-    
-    # Identify and remove oddball trials
-    oddball_idx = np.where(event_id == 8)[0]  # Ensure you get indices (using [0] to extract the indices array)
-    
-    # Remove oddball events from the data
-    event_id = np.delete(event_id, oddball_idx)
-    data = np.delete(data, oddball_idx, axis=0)  # Remove corresponding data rows (trials)
-    
-    # Create event onset and preceding event arrays
-    event_onset = np.arange(len(event_id), dtype=int)
-    event_precede = np.zeros(len(event_id), dtype=int)
-    
-    # Stack the event info into the correct format (onset, preceding, event_id)
-    events = np.vstack((event_onset, event_precede, event_id)).T
-
-    print(np.shape(events))  # Should now match the number of trials/data entries (~570, 3)
-    print(np.shape(data))    # Ensure that data and events have consistent shapes (~570, 246, 1119)
-    
-    # Define event_id mapping
-    event_mapping = {
-        "food/short/rep1": 10, "food/medium/rep1": 12, "food/long/rep1": 14, 
-        "food/short/rep2": 20, "food/medium/rep2": 22, "food/long/rep2": 24,
-        "positive/short/rep1": 110, "positive/medium/rep1": 112, "positive/long/rep1": 114,
-        "positive/short/rep2": 120, "positive/medium/rep2": 122, "positive/long/rep2": 124,
-        "neutral/short/rep1": 210, "neutral/medium/rep1": 212, "neutral/long/rep1": 214,
-        "neutral/short/rep2": 220, "neutral/medium/rep2": 222, "neutral/long/rep2": 224
-    }
-    
-    # Create the epochs
-    baseline = (-0.3, 0)
-    epochs = mne.EpochsArray(
-        data, mne_info, events=events, tmin=tmin, event_id=event_mapping,
-        reject=None, flat=None, reject_tmin=None, reject_tmax=None,
-        baseline=baseline, proj=True, on_missing='raise', metadata=None,
-        selection=None, drop_log=None, raw_sfreq=None, verbose=None
-    )
-    
-    return epochs
-
-def convert_mat_to_epochsFIF(mat_input_directory: str, fif_output_directory: str):
-    """
-    Processes the subject data files in the given directory, converts them to MNE Epochs format,
-    and saves them as FIF files.
-
-    Parameters:
-    - mat_input_directory (str): The path to the directory containing subject data files.
-    - fif_output_directory (str): The path to the directory where the processed FIF files will be saved.
-    """
-
-    # Define the directory and the file pattern for matching
-    directory = Path(mat_input_directory)
-
-    # Initialize the iteration count
-    iteration = 0
-
-    # Get a list of all files in the directory that match the pattern. This may change depending on your data.
-    file_paths = directory.glob("datafinalLow*")
-
-    # Iterate over the matched files
-    for file in file_paths:
-        # Take the unique part of the file - subject number XXX
-        subject_num = re.split(r"[_.]+", file.name)[1]
-
-        # Convert .mat to dict
-        sub_dict = convert_mat_to_dict(file)
-
-        # Create mne.Info object only once as it is same across subjects
-        if iteration == 0:
-            mne_info = create_mne_info_all(sub_dict)
-
-        # Create mne.EpochsArray class
-        epochs = convert_dict_to_epochs(sub_dict, mne_info)
-
-        # Save as FIF files which is the standard format readable in MNE-Python
-        save_in_path = os.path.join(fif_output_directory, f"{subject_num}_epo.fif")
-        epochs.save(save_in_path, overwrite=True)
-
-        # Change the iteration to prevent the creation of new mne.Info object
-        iteration = 1
-
-def split_list(lst, chunk_size):
-    """
-    Helper function to split a list into chunks of a specified size.
-    Used for grouping the conditions based on event ID.
-
-    Parameters:
-    - lst (list) - List to be splitted
-    - chunk_size (int) - Number of elements in the output
-
-    Returns: A list with n=chunk_size elements
-    """
-
-    # Use a list comprehension to create chunks
-    # For each index 'i' in the range from 0 to the length of the list with step 'chunk_size'
-    # Slice the list from index 'i' to 'i + chunk_size'
-    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
-
-def stack_lags_of_conditions(epochs, conditions):
-    """
-    Takes the information from each lag duration of each category * repetition and concatenates them.
-
-    Parameters:
-    - epochs (var): Instance of Epochs class
-    - conditions (list): Information from split_list(). Corresponds to category * repetition
-
-    Returns: A three-dimensional numpy array (np.ndarray)
-    """
-    
-    # The indices 0,1,2 are with respect to how the conditions were originally ordered:
-    # e.g. Food_Short_1, Food_Medium_1, Food_Long_1, ...
-    short = epochs[conditions[0]].get_data()
-    medium = epochs[conditions[1]].get_data()
-    long = epochs[conditions[2]].get_data()
-
-    # Vertically stack to create 3D array
-    stacked_over_trial = np.vstack((short, medium, long))
-    return stacked_over_trial
-
-def convert_epochsFIF_to_npy(fif_input_directory: str, npy_output_directory: str, conds: list, tmin: float = None, tmax: float = None):
+def convert_epochsFIF_to_npy(fif_input_directory: str, npy_output_directory: str, 
+                             tmin: float = None, tmax: float = None):
     """
     Processes the epoched data files in the given directory, optionally crops the epochs to a time window of interest,
     and saves the concatenated numpy arrays for each condition.
@@ -201,34 +21,122 @@ def convert_epochsFIF_to_npy(fif_input_directory: str, npy_output_directory: str
     # Ensure the lengths match before iterating
     if len(subject_files) != len(save_folders):
         print(f"Error: The number of files and saving directories do not match.")
-        return
 
     # Process each subject's data
     for file, saving_folder in zip(subject_files, save_folders):
         # Create instance of Epochs class
         epochs = mne.read_epochs(file)
+        epochs_toi = epochs.crop(tmin=tmin, tmax=tmax)
 
-        # Optionally crop only the time of interest (if tmin and tmax are provided)
-        if tmin is not None and tmax is not None:
-            epochs_toi = epochs.crop(tmin=tmin, tmax=tmax)
-        else:
-            epochs_toi = epochs  # No cropping if tmin and tmax are None
-
-        # Create a list of all conditions in the epoched data
+        # Get list of conditions and replace slashes with underscores in the conditions list
         conditions = list(epochs_toi.event_id.keys())
+        conditions_for_saving = [condition.replace('/', '_') for condition in conditions]
 
-        # Create a list of 6 conditions (Food_1, Food_2, Positive_1, Positive_2, Neutral_1, Neutral_2)
-        groups = split_list(conditions, 3)
+        # Iterate over conditions
+        for condition, condition_for_saving in zip(conditions, conditions_for_saving):
+            # Select epochs for the current condition
+            condition_epochs = epochs_toi[condition]
+            
+            # Convert the epochs to a numpy array (data)
+            condition_data = condition_epochs.get_data()  # shape: (n_epochs, n_channels, n_times)
 
-        # Save numpy arrays for each condition group
-        for group, cond in zip(groups, conds):
-            concat_condition_data = stack_lags_of_conditions(epochs_toi, group)
-            path = os.path.join(saving_folder, cond)
-            np.save(path, concat_condition_data)
+            # Create a file path for saving the numpy array
+            save_path = saving_folder / f"{condition_for_saving}.npy"
+            
+            # Save the condition data as a .npy file
+            np.save(save_path, condition_data)
 
-        print(f"Processed and saved data for {file.name}.")
+            print(f"Saved {condition_for_saving} data for {file.stem} to {save_path}")
 
-def derive_class_labels(npy_IO_directory):
+
+def preprocess_helper(input_dir, output_dir, process_func, suffix='processed', **process_func_args):
+    """
+    Process all .npy files in each subject directory (sub_XXX), apply the provided processing function,
+    and save the results to the output directory.
+
+    Parameters:
+    - input_dir (str): The directory containing subject directories (sub_XXX).
+    - output_dir (str): The directory where the processed data will be saved.
+    - process_func (function): The processing function to be applied to the data.
+    - suffix (str): The suffix to be added to the processed files (default is 'processed').
+    - **process_func_args: Additional arguments to pass to the processing function.
+    """
+
+    # Get a sorted list of subject directories
+    subject_dirs = sorted([sub_dir for sub_dir in os.listdir(input_dir) 
+                           if sub_dir.startswith('sub_') and os.path.isdir(os.path.join(input_dir, sub_dir))])
+
+    # Iterate through each subject directory
+    for sub_dir in subject_dirs:
+        sub_dir_path = os.path.join(input_dir, sub_dir)
+        
+        # Create the corresponding subfolder in the output directory
+        output_subfolder = os.path.join(output_dir, sub_dir)
+        os.makedirs(output_subfolder, exist_ok=True)
+        
+        # Iterate through each .npy file in the subject directory
+        for file_name in os.listdir(sub_dir_path):
+            if file_name.endswith('.npy'):
+                file_path = os.path.join(sub_dir_path, file_name)
+                
+                # Load the data
+                data = np.load(file_path)
+                
+                # Apply the provided processing function to the data
+                processed_data = process_func(data, **process_func_args)
+                
+                # Save the processed data to the respective subfolder in the output directory
+                processed_file_name = file_name.replace('.npy', f'_{suffix}.npy')
+                processed_file_path = os.path.join(output_subfolder, processed_file_name)
+                np.save(processed_file_path, processed_data)
+
+                # Print for tracking purposes
+                print(f"Processed and saved: {processed_file_name} in {output_subfolder}")
+
+
+def calculate_pseudo_trials(data, n_groups):
+    """
+    Function that computes pseudo-trials from raw (single) trials and performs PCA to reduce the number of channels.
+    For each condition, raw trials (n=~20-30) were randomly placed in 5 groups then averaged.
+    
+    Parameters:
+    - data (np.ndarray): A 2DD matrix of shape (n_epochs, n_channels)
+    - n_groups (int): Number of pseudo-trials to be defined. Default value is 5. Must not be larger than 20.
+    - n_components (int): Number of PCA components to retain. Default is 5.
+
+    Returns:
+    - A 3D numpy array of shape (n_groups, n_components) after averaging over time and performing PCA.
+    """
+    # Ensure n_groups is not larger than 20 (minimum number of single trials in a condition)
+    assert n_groups <= 20, f"n_groups must not be larger than 20, but got {n_groups}"
+
+    # Get the length of each axis of the 3D matrix
+    n_epochs, n_channels, n_times = data.shape
+
+    # Step 1: Average the data over the time axis (n_times)
+    data_avg_time = np.mean(data, axis=2)  # Resulting shape: (n_epochs, n_channels)
+
+    # Step 2: Split the epochs into n_groups
+    group_size = n_epochs // n_groups
+    groups = [np.arange(i * group_size, (i + 1) * group_size) for i in range(n_groups)]
+    
+    # Handle any remaining epochs (in case n_epochs is not divisible by n_groups)
+    if n_epochs % n_groups != 0:
+        groups[-1] = np.concatenate([groups[-1], np.arange(n_groups * group_size, n_epochs)])
+
+    # Step 3: Average epochs within each group to create pseudo-trials
+    group_pseudo_trials = []
+    for group in groups:
+        pseudo_trial = np.mean(data_avg_time[group, :], axis=0)  # Average over the epochs in the group
+        group_pseudo_trials.append(pseudo_trial)
+
+    # Step 4: Stack the pseudo-trials into a 2D array (n_groups x n_channels)
+    pseudo_trials = np.stack(group_pseudo_trials, axis=0)  # Shape: (n_groups, n_channels)
+
+    return pseudo_trials
+
+
+def derive_class_labels(npy_IO_directory, suffix):
     """
     Derive new class labels from the base conditions.
     """
@@ -247,12 +155,26 @@ def derive_class_labels(npy_IO_directory):
 
         # Define file paths for each condition
         condition_files = {
-            'food_1': os.path.join(subject_dir, 'food_1.npy'),
-            'positive_1': os.path.join(subject_dir, 'positive_1.npy'),
-            'neutral_1': os.path.join(subject_dir, 'neutral_1.npy'),
-            'food_2': os.path.join(subject_dir, 'food_2.npy'),
-            'positive_2': os.path.join(subject_dir, 'positive_2.npy'),
-            'neutral_2': os.path.join(subject_dir, 'neutral_2.npy')
+            'food_short_1': os.path.join(subject_dir, f'food_short_rep1_{suffix}.npy'),
+            'food_medium_1': os.path.join(subject_dir, f'food_medium_rep1_{suffix}.npy'),
+            'food_long_1': os.path.join(subject_dir, f'food_long_rep1_{suffix}.npy'),
+            'food_short_2': os.path.join(subject_dir, f'food_short_rep2_{suffix}.npy'),
+            'food_medium_2': os.path.join(subject_dir, f'food_medium_rep2_{suffix}.npy'),
+            'food_long_2': os.path.join(subject_dir, f'food_long_rep2_{suffix}.npy'),
+
+            'positive_short_1': os.path.join(subject_dir, f'positive_short_rep1_{suffix}.npy'),
+            'positive_medium_1': os.path.join(subject_dir, f'positive_medium_rep1_{suffix}.npy'),
+            'positive_long_1': os.path.join(subject_dir, f'positive_long_rep1_{suffix}.npy'),
+            'positive_short_2': os.path.join(subject_dir, f'positive_short_rep2_{suffix}.npy'),
+            'positive_medium_2': os.path.join(subject_dir, f'positive_medium_rep2_{suffix}.npy'),
+            'positive_long_2': os.path.join(subject_dir, f'positive_long_rep2_{suffix}.npy'),
+
+            'neutral_short_1': os.path.join(subject_dir, f'neutral_short_rep1_{suffix}.npy'),
+            'neutral_medium_1': os.path.join(subject_dir, f'neutral_medium_rep1_{suffix}.npy'),
+            'neutral_long_1': os.path.join(subject_dir, f'neutral_long_rep1_{suffix}.npy'),
+            'neutral_short_2': os.path.join(subject_dir, f'neutral_short_rep2_{suffix}.npy'),
+            'neutral_medium_2': os.path.join(subject_dir, f'neutral_medium_rep2_{suffix}.npy'),
+            'neutral_long_2': os.path.join(subject_dir, f'neutral_long_rep2_{suffix}.npy'),
         }
 
         # Check if all files exist
@@ -265,43 +187,86 @@ def derive_class_labels(npy_IO_directory):
             continue
 
         # Stack the data for various conditions
-        food = np.vstack([data['food_1'], data['food_2']])
-        nonfood = np.vstack([data['positive_1'], data['neutral_1'], data['positive_2'], data['neutral_2']])
-        nonfood_1 = np.vstack([data['positive_1'], data['neutral_1']])
-        nonfood_2 = np.vstack([data['positive_2'], data['neutral_2']])
-        positive = np.vstack([data['positive_1'], data['positive_2']])
-        neutral = np.vstack([data['neutral_1'], data['neutral_2']])
-        pres_1 = np.vstack([data['food_1'], data['positive_1'], data['neutral_1']])
-        pres_2 = np.vstack([data['food_2'], data['positive_2'], data['neutral_2']])
+        food = np.vstack([data['food_short_1'], data['food_medium_1'], data['food_long_1'], 
+                          data['food_short_2'], data['food_medium_2'], data['food_long_2']])
+        food_1 = np.vstack([data['food_short_1'], data['food_medium_1'], data['food_long_1']])
+        food_2 = np.vstack([data['food_short_2'], data['food_medium_2'], data['food_long_2']])
 
-        salient = np.vstack([data['food_1'], data['positive_1'], data['food_2'], data['positive_2']])
-        salient_1 = np.vstack([data['food_1'], data['positive_1']])
-        salient_2 = np.vstack([data['food_2'], data['positive_2']])
+        positive = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                          data['positive_short_2'], data['positive_medium_2'], data['positive_long_2']])
+        positive_1 = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1']])
+        positive_2 = np.vstack([data['positive_short_2'], data['positive_medium_2'], data['positive_long_2']])
 
-        control = np.vstack([data['food_1'], data['neutral_1'], data['food_2'], data['neutral_2']])
-        control_1 = np.vstack([data['food_1'], data['neutral_1']])
-        control_2 = np.vstack([data['food_2'], data['neutral_2']])
+        neutral = np.vstack([data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1'], 
+                          data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2']])
+        neutral_1 = np.vstack([data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1']])
+        neutral_2 = np.vstack([data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2']])
 
+        nonfood = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                             data['positive_short_2'], data['positive_medium_2'], data['positive_long_2'],
+                             data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1'],
+                             data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2']])
+        nonfood_1 = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                               data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1']])
+        nonfood_2 = np.vstack([data['positive_short_2'], data['positive_medium_2'], data['positive_long_2'], 
+                               data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2']])
+        
+        salient = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                             data['positive_short_2'], data['positive_medium_2'], data['positive_long_2'],
+                             data['food_short_1'], data['food_medium_1'], data['food_long_1'],
+                             data['food_short_2'], data['food_medium_2'], data['food_long_2']])
+        salient_1 = np.vstack([data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                               data['food_short_1'], data['food_medium_1'], data['food_long_1']])
+        salient_2 = np.vstack([data['positive_short_2'], data['positive_medium_2'], data['positive_long_2'], 
+                               data['food_short_2'], data['food_medium_2'], data['food_long_2']])
+        
+        control = np.vstack([data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1'], 
+                             data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2'],
+                             data['food_short_1'], data['food_medium_1'], data['food_long_1'],
+                             data['food_short_2'], data['food_medium_2'], data['food_long_2']])
+        control_1 = np.vstack([data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1'], 
+                               data['food_short_1'], data['food_medium_1'], data['food_long_1']])
+        control_2 = np.vstack([data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2'], 
+                               data['food_short_2'], data['food_medium_2'], data['food_long_2']])
+        
+        pres_1 = np.vstack([data['food_short_1'], data['food_medium_1'], data['food_long_1'],
+                            data['positive_short_1'], data['positive_medium_1'], data['positive_long_1'], 
+                            data['neutral_short_1'], data['neutral_medium_1'], data['neutral_long_1']])
+        pres_2 = np.vstack([data['food_short_2'], data['food_medium_2'], data['food_long_2'],
+                            data['positive_short_2'], data['positive_medium_2'], data['positive_long_2'], 
+                            data['neutral_short_2'], data['neutral_medium_2'], data['neutral_long_2']])
+        
         # Save the stacked data using derived_conds
         save_data = {
-            'food.npy': food,
-            'nonfood.npy': nonfood,
-            'nonfood_1.npy': nonfood_1,
-            'nonfood_2.npy': nonfood_2,
-            'positive.npy': positive,
-            'neutral.npy': neutral,
-            'pres_1.npy': pres_1,
-            'pres_2.npy': pres_2,
-            'salient.npy': salient,
-            'salient_1.npy': salient_1,
-            'salient_2.npy': salient_2,
-            'control.npy': control,
-            'control_1.npy': control_1,
-            'control_2.npy': control_2,
+            'food': food,
+            'food_1': food_1,
+            'food_2': food_2,
+
+            'positive': positive,
+            'positive_1': positive_1,
+            'positive_2': positive_2,
+
+            'neutral': neutral,
+            'neutral_1': neutral_1,
+            'neutral_2': neutral_2,
+
+            'nonfood': nonfood,
+            'nonfood_1': nonfood_1,
+            'nonfood_2': nonfood_2,
+
+            'salient': salient,
+            'salient_1': salient_1,
+            'salient_2': salient_2,
+
+            'control': control,
+            'control_1': control_1,
+            'control_2': control_2,
+
+            'pres_1': pres_1,
+            'pres_2': pres_2,
         }
 
         for filename, data_array in save_data.items():
-            if filename in derived_conds:  # Only save the derived conditions
-                save_path = os.path.join(saving_folder, filename)
-                np.save(save_path, data_array)
-                print(f"Saved {filename} for subject {file}")
+            save_path = os.path.join(saving_folder, f"{filename}_{suffix}")
+            np.save(save_path, data_array)
+            print(f"Saved {filename} for subject {file}")

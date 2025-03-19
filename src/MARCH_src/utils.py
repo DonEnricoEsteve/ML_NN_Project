@@ -38,44 +38,35 @@ from sklearn.manifold import MDS
 np.random.seed(42)
 
 # Set working directory. Set your own directory.
-wd = "/Volumes/Seagate/ML_Project/MARCH_ANALYSIS"
-# dirs = [f"{wd}/M100_npy", f"{wd}/M200_npy", f"{wd}/M300_npy", f"{wd}/MLPP_npy"]
+wd = "Z:\Don\ML_Project\MARCH_ANALYSIS"
 
 # Define event-related field (ERF) components (ADD BL)
 component_start_times = [-0.3, 0, 0.118, 0.171, 0.239, 0.350]
 component_end_times = [0, 0.799, 0.155, 0.217, 0.332, 0.799]
-component_labels = ['BL', 'PS', 'm100', 'm200', 'm300', 'mLPP']
-
-# components_with_colors = [
-#     (component_start_times[0], component_end_times[0], "(a)", "Baseline Window (-0.3-0 ms)", "black"),
-#     (component_start_times[1], component_end_times[1], "(b)", "Post-Stimulus Window (0-800 ms)", "lightgray"),
-#     (component_start_times[2], component_end_times[2], "(c)", "m100 Component (118-155 ms)", "lightskyblue"),
-#     (component_start_times[3], component_end_times[3], "(d)", "m200 Component (171-217 ms)", "lightgreen"),
-#     (component_start_times[4], component_end_times[4], "(e)", "m300 Component (239-332 ms)", "salmon"),
-#     (component_start_times[5], component_end_times[5], "(f)", "mLPP Component (350-800 ms)", "#D1A6D0")
-# ]
 
 # ============================================== #
 # Part 1: Convert MNE epochs to Numpy arrays
 # ============================================== #
 
-# # Set directory where preprocessed MEG files (.mat) are located
-# mat_directory = f"{wd}/Evoked_mat"
-
 # Set directory where preprocessed MEG files (.fif) are (to be) located
-fif_directory = "/Volumes/Seagate/ML_Project/Evoked_fif"
+fif_directory = "Z:\Don\ML_Project\Evoked_fif"
 
 # Set directory where preprocessed MEG files (.npy) are (to be) located
-npy_directory = f"{wd}/PS_npy"
+npy_directory = f"{wd}/NEW_npys/M100_orig"
 
-# Define the names of the output numpy arrays
-base_conds = ['food_1.npy', 'food_2.npy', 'positive_1.npy', 'positive_2.npy', 'neutral_1.npy', 'neutral_2.npy']
+PPC_directory = f"{wd}/NEW_npys/10PT/M100_Evoked_PPC"
+
+SF = "dec_pseudo_PCA"
 
 # Define the names of the output numpy arrays derived from the base conditions
-derived_conds = ['food.npy', 'nonfood.npy', 'nonfood_1.npy', 'nonfood_2.npy', 
-                 'positive.npy', 'neutral.npy', 'pres_1.npy', 'pres_2.npy',
-                 'salient.npy', 'salient_1.npy', 'salient_2.npy',
-                 'control.npy','control_1.npy','control_2.npy']
+derived_conds = [
+    'food.npy', 'food_1.npy', 'food_2.npy', 
+    'positive.npy', 'positive_1.npy', 'positive_2.npy',
+    'neutral.npy', 'neutral_1.npy', 'neutral_2.npy',  
+    'nonfood.npy', 'nonfood_1.npy', 'nonfood_2.npy',
+    'salient.npy', 'salient_1.npy', 'salient_2.npy',
+    'control.npy','control_1.npy','control_2.npy',
+    'pres_1.npy', 'pres_2.npy']
 
 # ============================================== #
 # Part 2: Data Preprocessing
@@ -95,11 +86,27 @@ derived_conds = ['food.npy', 'nonfood.npy', 'nonfood_1.npy', 'nonfood_2.npy',
 # ============================================== #
 
 # Define general directory for results
-results_dir = f"{wd}/Results_03_14"
+results_dir = f"{wd}/Results_03_17"
 
 # Define the binary classification tasks to be performed
 # FOLLOWING THE FRAMEWORK GROUPING
 binary_tasks = {
+    # ALL-RELATED
+    # NEUTRAL VS SALIENT
+    "TS": ["neutral_dec_pseudo_PCA", "salient_dec_pseudo_PCA"],
+    "TS1": ["neutral_1_dec_pseudo_PCA", "salient_1_dec_pseudo_PCA"],
+    "TS2": ["neutral_2_dec_pseudo_PCA", "salient_2_dec_pseudo_PCA"],
+
+    # FOOD VS NONFOOD
+    "FN": ["food_dec_pseudo_PCA", "nonfood_dec_pseudo_PCA"],
+    "FN1": ["food_1_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA"],
+    "FN2": ["food_2_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+
+    # POSITIVE VS CONTROL
+    "PC": ["positive_dec_pseudo_PCA", "control_dec_pseudo_PCA"],
+    "PC1": ["positive_1_dec_pseudo_PCA", "control_1_dec_pseudo_PCA"],
+    "PC2": ["positive_2_dec_pseudo_PCA", "control_2_dec_pseudo_PCA"],
+
     # SOLO
     "F12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA"],
     "P12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
@@ -123,28 +130,16 @@ binary_tasks = {
     "FT2": ["food_2_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
     "C12": ["control_1_dec_pseudo_PCA", "control_2_dec_pseudo_PCA"],
 
-    # ALL-RELATED
-    # NEUTRAL VS SALIENT
-    "TS": ["neutral_dec_pseudo_PCA", "salient_dec_pseudo_PCA"],
-    "TS1": ["neutral_1_dec_pseudo_PCA", "salient_1_dec_pseudo_PCA"],
-    "TS2": ["neutral_2_dec_pseudo_PCA", "salient_2_dec_pseudo_PCA"],
-
-    # FOOD VS NONFOOD
-    "FN": ["food_dec_pseudo_PCA", "nonfood_dec_pseudo_PCA"],
-    "FN1": ["food_1_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA"],
-    "FN2": ["food_2_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
-
-    # POSITIVE VS CONTROL
-    "PC": ["positive_dec_pseudo_PCA", "control_dec_pseudo_PCA"],
-    "PC1": ["positive_1_dec_pseudo_PCA", "control_1_dec_pseudo_PCA"],
-    "PC2": ["positive_2_dec_pseudo_PCA", "control_2_dec_pseudo_PCA"],
-
     "12": ["pres_1_dec_pseudo_PCA", "pres_2_dec_pseudo_PCA"],
 }
 
 # Define the multi-class classification tasks to be performed
 # By relative difficulty
 multiclass_tasks = {
+    "4-FN-12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
+    "4-TS-12": ["neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA", "salient_1_dec_pseudo_PCA", "salient_2_dec_pseudo_PCA"],
+    "4-PC-12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "control_1_dec_pseudo_PCA", "control_2_dec_pseudo_PCA"],
+
     "3-FPT": ["food_dec_pseudo_PCA", "positive_dec_pseudo_PCA", "neutral_dec_pseudo_PCA"],
     "3-FPT-1": ["food_1_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA"],
     "3-FPT-2": ["food_2_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
@@ -152,10 +147,6 @@ multiclass_tasks = {
     "4-FP-12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA"],
     "4-FT-12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
     "4-PT-12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
-
-    "4-FN-12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "nonfood_1_dec_pseudo_PCA", "nonfood_2_dec_pseudo_PCA"],
-    "4-TS-12": ["neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA", "salient_1_dec_pseudo_PCA", "salient_2_dec_pseudo_PCA"],
-    "4-PC-12": ["positive_1_dec_pseudo_PCA", "positive_2_dec_pseudo_PCA", "control_1_dec_pseudo_PCA", "control_2_dec_pseudo_PCA"],
 
     "6-FPT-12": ["food_1_dec_pseudo_PCA", "food_2_dec_pseudo_PCA", "positive_1_dec_pseudo_PCA", 
                  "positive_2_dec_pseudo_PCA", "neutral_1_dec_pseudo_PCA", "neutral_2_dec_pseudo_PCA"],
@@ -188,19 +179,19 @@ binary_chance = {
 
     # ALL-RELATED
     # NEUTRAL VS SALIENT
-    "TS": 0.666,
-    "TS1": 0.666,
-    "TS2": 0.666,
+    "TS": 0.500,
+    "TS1": 0.500,
+    "TS2": 0.500,
 
     # FOOD VS NONFOOD
-    "FN": 0.666,
-    "FN1": 0.666,
-    "FN2": 0.666,
+    "FN": 0.500,
+    "FN1": 0.500,
+    "FN2": 0.500,
 
     # POSITIVE VS CONTROL
-    "PC": 0.6666,
-    "PC1": 0.6666,
-    "PC2": 0.6666,
+    "PC": 0.500,
+    "PC1": 0.500,
+    "PC2": 0.500,
 
     "12": 0.500,
 }
@@ -215,9 +206,9 @@ multi_chance = {
     "4-FT-12": 0.250,
     "4-PT-12": 0.250,
 
-    "4-FN-12": 0.333,
-    "4-TS-12": 0.333,
-    "4-PC-12": 0.333,
+    "4-FN-12": 0.250,
+    "4-TS-12": 0.250,
+    "4-PC-12": 0.250,
 
     "6-FPT-12": 0.166
 }
