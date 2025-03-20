@@ -11,7 +11,7 @@ from n03_general_decoding import *
 
 # # Take the 3D data from each epochs of each original condition
 # convert_epochsFIF_to_npy(fif_input_directory=fif_directory, npy_output_directory=npy_directory, 
-#                          tmin=component_start_times[0], tmax=component_end_times[0]) 
+#                          tmin=component_start_times[3], tmax=component_end_times[3]) 
 
 # # Average over time and apply pseudo-trial calculation for the 18 original conditions
 # preprocess_helper(input_dir=npy_directory, output_dir=PPC_directory, 
@@ -25,52 +25,62 @@ from n03_general_decoding import *
 # # Part 3: General decoding
 # # ============================================== #
 
-fname = "BL_10_90"
+# fname = "M100_5_90"
 
-# Run binary classification (n=19 tasks)
-# Define output filename (recommended convention is window_binsize_groups_components)
-perform_general_decoding(base_dir=PPC_directory, tasks=binary_tasks, 
-                         classification_type='binary', output_filename=f"{fname}",
-                         variance_threshold=0.90, shuffle_labels=False)
+# # Run binary classification (n=19 tasks)
+# # Define output filename (recommended convention is window_binsize_groups_components)
+# perform_general_decoding(base_dir=PPC_directory, tasks=binary_tasks, 
+#                          classification_type='binary', output_filename=f"{fname}",
+#                          variance_threshold=0.99, shuffle_labels=False)
 
-# Run multi-class classification (n=9 tasks)
-# Define output filename (recommended convention is window_binsize_groups_components)
-perform_general_decoding(base_dir=PPC_directory, tasks=multiclass_tasks, 
-                         classification_type='multi', output_filename=f"{fname}",
-                         variance_threshold=0.90, shuffle_labels=False)
+# # Run multi-class classification (n=9 tasks)
+# # Define output filename (recommended convention is window_binsize_groups_components)
+# perform_general_decoding(base_dir=PPC_directory, tasks=multiclass_tasks, 
+#                          classification_type='multi', output_filename=f"{fname}",
+#                          variance_threshold=0.90, shuffle_labels=False)
 
-# Load the resulting lists (from general decoding) of within-subject accuracies for each task (n=18)
-list_binary_accuracies = np.load(f"{results_dir}/{fname}_accuracies_binary.npy")
-list_multi_accuracies = np.load(f"{results_dir}/{fname}_accuracies_multi.npy")
+# # Load the resulting lists (from general decoding) of within-subject accuracies for each task (n=18)
+# list_binary_accuracies = np.load(f"{results_dir}/{fname}_accuracies_binary.npy")
+# list_multi_accuracies = np.load(f"{results_dir}/{fname}_accuracies_multi.npy")
 
 # # Perform statistical analysis for each task (Wilcoxon signed-rank test)
-evaluate_decoding(list_binary_accuracies=list_binary_accuracies, list_multi_accuracies = list_multi_accuracies,
-                  binary_tasks=binary_tasks, multiclass_tasks=multiclass_tasks,
-                  binary_chance_levels=binary_chance, multiclass_chance_levels=multi_chance)
+# evaluate_decoding(list_binary_accuracies=list_binary_accuracies, list_multi_accuracies = list_multi_accuracies,
+#                   binary_tasks=binary_tasks, multiclass_tasks=multiclass_tasks,
+#                   binary_chance_levels=binary_chance, multiclass_chance_levels=multi_chance)
 
-# PPCs = [f"{wd}/5PT/BL_Evoked_PPC", f"{wd}/5PT/PS_Evoked_PPC", f"{wd}/5PT/M100_Evoked_PPC", f"{wd}/5PT/M200_Evoked_PPC", f"{wd}/5PT/M300_Evoked_PPC", f"{wd}/5PT/MLPP_Evoked_PPC",
-#         f"{wd}/5PT/BL_Evoked_PPC", f"{wd}/5PT/PS_Evoked_PPC", f"{wd}/5PT/M100_Evoked_PPC", f"{wd}/5PT/M200_Evoked_PPC", f"{wd}/5PT/M300_Evoked_PPC", f"{wd}/5PT/MLPP_Evoked_PPC",
-#         f"{wd}/10PT/BL_Evoked_PPC", f"{wd}/10PT/PS_Evoked_PPC", f"{wd}/10PT/M100_Evoked_PPC", f"{wd}/10PT/M200_Evoked_PPC", f"{wd}/10PT/M300_Evoked_PPC", f"{wd}/10PT/MLPP_Evoked_PPC",
-#         f"{wd}/10PT/BL_Evoked_PPC", f"{wd}/10PT/PS_Evoked_PPC", f"{wd}/10PT/M100_Evoked_PPC", f"{wd}/10PT/M200_Evoked_PPC", f"{wd}/10PT/M300_Evoked_PPC", f"{wd}/10PT/MLPP_Evoked_PPC"]
 
-# threshs = [0.80, 0.80, 0.80, 0.80, 0.80, 0.80,
-#            0.90, 0.90, 0.90, 0.90, 0.90, 0.90,
-#            0.80, 0.80, 0.80, 0.80, 0.80, 0.80,
-#            0.90, 0.90, 0.90, 0.90, 0.90, 0.90]
 
-# for PPC, fname, thresh in zip(PPCs, fnames, threshs):
+PPCs = [f"{wd}/NEW_npys/5PT/BL_Evoked_PPC", f"{wd}/NEW_npys/10PT/BL_Evoked_PPC", f"{wd}/NEW_npys/5PT/BL_Evoked_PPC", f"{wd}/NEW_npys/10PT/BL_Evoked_PPC",
+        f"{wd}/NEW_npys/10PT/M100_Evoked_PPC", f"{wd}/NEW_npys/5PT/M100_Evoked_PPC", f"{wd}/NEW_npys/10PT/M100_Evoked_PPC",
+        f"{wd}/NEW_npys/5PT/M200_Evoked_PPC", f"{wd}/NEW_npys/10PT/M200_Evoked_PPC", f"{wd}/NEW_npys/5PT/M200_Evoked_PPC", f"{wd}/NEW_npys/10PT/M200_Evoked_PPC",
+        ]
 
-#     # Run binary classification (n=19 tasks)
-#     # Define output filename (recommended convention is window_binsize_groups_components)
-#     perform_general_decoding(base_dir=PPC, tasks=binary_tasks, 
-#                             classification_type='binary', output_filename=f"{fname}",
-#                             variance_threshold=thresh, shuffle_labels=False)
+threshs = [0.90, 0.90, 0.99, 0.99,
+           0.90, 0.99, 0.99,
+           0.90, 0.90, 0.99, 0.99,
+        ]
 
-#     # Run multi-class classification (n=9 tasks)
-#     # Define output filename (recommended convention is window_binsize_groups_components)
-#     perform_general_decoding(base_dir=PPC, tasks=multiclass_tasks, 
-#                             classification_type='multi', output_filename=f"{fname}",
-#                             variance_threshold=thresh, shuffle_labels=False)
+fnames = ["BL_5_90", "BL_10_90", "BL_5_99", "BL_10_99",
+          "M100_10_90", "M100_5_99", "M100_10_99",
+          "M200_5_90", "M200_10_90", "M200_5_99", "M200_10_99",
+          ]
+
+for PPC, fname, thresh in zip(PPCs, fnames, threshs):
+
+    # Run binary classification (n=19 tasks)
+    # Define output filename (recommended convention is window_binsize_groups_components)
+    perform_general_decoding(base_dir=PPC, tasks=binary_tasks, 
+                            classification_type='binary', output_filename=f"{fname}",
+                            variance_threshold=thresh, shuffle_labels=False)
+
+    # Run multi-class classification (n=9 tasks)
+    # Define output filename (recommended convention is window_binsize_groups_components)
+    perform_general_decoding(base_dir=PPC, tasks=multiclass_tasks, 
+                            classification_type='multi', output_filename=f"{fname}",
+                            variance_threshold=thresh, shuffle_labels=False)
+    
+
+# fnames=["M100_5_90"]
 
 # for fname in fnames:
 

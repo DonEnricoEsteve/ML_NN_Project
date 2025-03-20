@@ -52,9 +52,9 @@ component_end_times = [0, 0.799, 0.155, 0.217, 0.332, 0.799]
 fif_directory = "Z:\Don\ML_Project\Evoked_fif"
 
 # Set directory where preprocessed MEG files (.npy) are (to be) located
-npy_directory = f"{wd}/NEW_npys/M100_orig"
+npy_directory = f"{wd}/NEW_npys/M200_orig"
 
-PPC_directory = f"{wd}/NEW_npys/10PT/M100_Evoked_PPC"
+PPC_directory = f"{wd}/NEW_npys/10PT/M200_Evoked_PPC"
 
 SF = "dec_pseudo_PCA"
 
