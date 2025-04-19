@@ -3,5 +3,4 @@ Multivariate across-subject decoding of MEG evoked responses from repeated visua
 
 **src** contains all the code used for data preprocessing, analysis, and visualization
 
-
-**results** contains all the results from general decoding, temporal generalization, and representational similarity analysis
+**results** contains all the results from general decoding, temporal generalization, representational similarity analysis, and sensor weight
