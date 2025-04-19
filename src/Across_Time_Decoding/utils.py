@@ -32,7 +32,8 @@ alphas = [0.05, 0.01, 0.001]
 
 # Paths:
 
-project_path = "C:/Users/eliza/Documents/ML_NN_Project"
+# Set your own project path
+project_path = "/Documents/ML_NN_Project"
 
 scores_path = project_path + "/scores"
 
