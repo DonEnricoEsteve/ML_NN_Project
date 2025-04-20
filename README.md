@@ -5,7 +5,7 @@ The codes contained in **src** implement:
 1. General binary and multiclass decoding for exploring the decodability of various tasks across various windows and sample-feature combinations.
 2. Across time decoding using SlidingEstimator and GeneralizingEstimator for finding onset and duration of food vs. neutral decodability, and uncovering the neural activation pattern. 
 3. Representational similarity analysis using pairwise decoding of the 18 original conditions for unveiling the linearity of separability of food and non-food
-4. Weight projection using ... for ..
+4. Weight projection using Haufe transformation for identifying the most contributing sensors to food vs. non-food decodability.
 
 ### Data Description:
 Each participant from the 42 participants in the study was shown image repetitions. 
