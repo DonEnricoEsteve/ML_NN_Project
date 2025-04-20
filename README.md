@@ -19,8 +19,9 @@ The data used in the implementation is:
 * config and hsfile (head shape) accompanying the raw MEG recording.
   
 ## Project usage:
-**src** contains all the code used for data preprocessing, analysis, and visualization. 
-Use the codes under **src** for each analysis seperately (General Decoding, Across Time Decoding, RSA and Weight Projection).
+**src** contains all the code used for data preprocessing, analysis, and visualization.  
+Use the codes under **src** for each analysis seperately (General Decoding, Across Time Decoding, RSA and Weight Projection). 
+
 For all analyses:
   1. Open a project folder.
   2. Download the epoched data and store it in an "Evoked_fif" folder.
@@ -34,9 +35,9 @@ For all analyses:
      * For weight projection:
   
 Note: for weight projection additionaly download the raw data from - 
-https://drive.google.com/drive/folders/16exK0kKPW0W8BUurdBni1D-hqHBp-To-?usp=drive_link 
+https://drive.google.com/drive/folders/16exK0kKPW0W8BUurdBni1D-hqHBp-To-?usp=drive_link.  
 Store the raw data in the following manner: 
 
 
-**Results** contains the results from general decoding, across time decoding, representational similarity analysis, and sensor weight
+**Results** contains the results from general decoding, across time decoding, representational similarity analysis, and sensor weight projection
 using the entire 42 subject dataset.
