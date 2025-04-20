@@ -6,4 +6,7 @@ scipy
 matplotlib
 seaborn
 scikit-learn
-
+joblib==1.4.2
+h5py==3.12.1
+scipy==1.15.1
+tqdm==4.67.1
