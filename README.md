@@ -2,7 +2,7 @@
 
 ### Project Description and Goals:
 The codes contained in **src** implement:
-1. General binary and multiclass decoding using for exploring the decodability of various tasks across various windows and sample-feature combinations.
+1. General binary and multiclass decoding for exploring the decodability of various tasks across various windows and sample-feature combinations.
 2. Across time decoding using SlidingEstimator and GeneralizingEstimator for finding onset and duration of food vs. neutral decodability, and uncovering the neural activation pattern. 
 3. Representational similarity analysis using pairwise decoding of the 18 original conditions for unveiling the linearity of separability of food and non-food
 4. Weight projection using ... for ..
