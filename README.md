@@ -32,7 +32,7 @@ For all analyses:
      * For general decoding: 10-90
      * For across time decoding: scores, stats, plots.
      * For RSA: scores (for plotting), scores (for statistical analysis)
-     * For weight projection:
+     * For weight projection: haufe_transform (for the activation weights)
   
 Note: for weight projection, additionally download the raw data from - 
 https://drive.google.com/drive/folders/16exK0kKPW0W8BUurdBni1D-hqHBp-To-?usp=drive_link.  
