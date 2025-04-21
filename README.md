@@ -37,6 +37,7 @@ For all analyses:
      * For across time decoding: "scores", "stats", "plots".
      * For RSA: "RSA_Results"
      * For weight projection: haufe_transform (for the activation weights)
+     * For plotting summary statistics: "Summary_statistics_plots"
   
 Note: for weight projection, additionally download the raw data from - 
 https://drive.google.com/drive/folders/16exK0kKPW0W8BUurdBni1D-hqHBp-To-?usp=drive_link.  
