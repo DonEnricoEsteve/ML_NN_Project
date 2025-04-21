@@ -41,7 +41,7 @@ For all analyses:
   
 Note: for weight projection, additionally download the raw data from - 
 https://drive.google.com/drive/folders/16exK0kKPW0W8BUurdBni1D-hqHBp-To-?usp=drive_link.  
-Store the raw data in the following manner: 
+Store the raw data in the main project directory.
 
 
 **Results** contains the results from general decoding, across time decoding, representational similarity analysis, and sensor weight projection
