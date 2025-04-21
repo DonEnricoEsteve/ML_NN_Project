@@ -79,7 +79,7 @@ sf = "dec_pseudo_PCA"
 # ============================================== #
 
 # Define general directory for results
-results_dir = f"{wd}/Results_03_17"
+results_dir = f"{wd}/Results_general_decoding"
 
 # Define the folder directory containing the window- and sample size-specific preprocessed numpy arrays 
 ppc_subfolders = [f"{wd}/5PT/BL_Evoked_PPC", f"{wd}/10PT/BL_Evoked_PPC", f"{wd}/5PT/BL_Evoked_PPC", f"{wd}/10PT/BL_Evoked_PPC",
@@ -253,7 +253,7 @@ components_labels = [
 # ============================================================ #
 
 # Set directory to save RSA files
-RSA_wd = f"{wd}/RSA_Results_03_27"
+RSA_wd = f"{wd}/RSA_Results"
 
 # Define folder directories for performing RSA (only 10-90%)
 rsa_ppcs = [f"{wd}/10PT/BL_Evoked_PPC", f"{wd}/10PT/M100_Evoked_PPC", f"{wd}/10PT/M200_Evoked_PPC", 
