@@ -100,7 +100,7 @@ def calculate_pseudo_trials(data, n_groups):
     For each condition, raw trials (n=~20-30) were randomly placed in 5 groups then averaged.
     
     Parameters:
-    - data (np.ndarray): A 2D matrix of shape (n_epochs, n_channels)
+    - data (np.ndarray): A 3D matrix of shape (n_epochs, n_channels, n_times)
     - n_groups (int): Number of pseudo-trials to be defined. Default value is 5. Must not be larger than 20.
     - n_components (int): Number of PCA components to retain. Default is 5.
 
