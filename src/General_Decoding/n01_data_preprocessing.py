@@ -105,7 +105,7 @@ def calculate_pseudo_trials(data, n_groups):
     - n_components (int): Number of PCA components to retain. Default is 5.
 
     Returns:
-    - A 3D numpy array of shape (n_groups, n_components) after averaging over time and performing PCA.
+    - A 2D numpy array of shape (n_groups, n_components) after averaging over time and performing PCA.
     """
     # Ensure n_groups is not larger than 20 (minimum number of single trials in a condition)
     assert n_groups <= 20, f"n_groups must not be larger than 20, but got {n_groups}"
